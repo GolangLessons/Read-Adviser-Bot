@@ -1,13 +1,14 @@
 package main
 
 import (
-	"flag"
 	"log"
+	"time"
 
 	tgClient "read-adviser-bot/clients/telegram"
+	"read-adviser-bot/config"
 	"read-adviser-bot/consumer/event-consumer"
 	"read-adviser-bot/events/telegram"
-	"read-adviser-bot/storage/files"
+	"read-adviser-bot/storage/mongo"
 )
 
 const (
@@ -17,9 +18,14 @@ const (
 )
 
 func main() {
+	cfg := config.MustLoad()
+	//storage := files.New(storagePath)
+
+	storage := mongo.New(cfg.MongoConnectionString, 10*time.Second)
+
 	eventsProcessor := telegram.New(
-		tgClient.New(tgBotHost, mustToken()),
-		files.New(storagePath),
+		tgClient.New(tgBotHost, cfg.TgBotToken),
+		storage,
 	)
 
 	log.Print("service started")
@@ -29,20 +35,4 @@ func main() {
 	if err := consumer.Start(); err != nil {
 		log.Fatal("service is stopped", err)
 	}
-}
-
-func mustToken() string {
-	token := flag.String(
-		"tg-bot-token",
-		"",
-		"token for access to telegram bot",
-	)
-
-	flag.Parse()
-
-	if *token == "" {
-		log.Fatal("token is not specified")
-	}
-
-	return *token
 }
