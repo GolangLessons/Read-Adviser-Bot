@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -34,14 +35,14 @@ func newBasePath(token string) string {
 	return "bot" + token
 }
 
-func (c *Client) Updates(offset int, limit int) (updates []Update, err error) {
+func (c *Client) Updates(ctx context.Context, offset int, limit int) (updates []Update, err error) {
 	defer func() { err = e.WrapIfErr("can't get updates", err) }()
 
 	q := url.Values{}
 	q.Add("offset", strconv.Itoa(offset))
 	q.Add("limit", strconv.Itoa(limit))
 
-	data, err := c.doRequest(getUpdatesMethod, q)
+	data, err := c.doRequest(ctx, getUpdatesMethod, q)
 	if err != nil {
 		return nil, err
 	}
@@ -55,12 +56,12 @@ func (c *Client) Updates(offset int, limit int) (updates []Update, err error) {
 	return res.Result, nil
 }
 
-func (c *Client) SendMessage(chatID int, text string) error {
+func (c *Client) SendMessage(ctx context.Context, chatID int, text string) error {
 	q := url.Values{}
 	q.Add("chat_id", strconv.Itoa(chatID))
 	q.Add("text", text)
 
-	_, err := c.doRequest(sendMessageMethod, q)
+	_, err := c.doRequest(ctx, sendMessageMethod, q)
 	if err != nil {
 		return e.Wrap("can't send message", err)
 	}
@@ -68,7 +69,7 @@ func (c *Client) SendMessage(chatID int, text string) error {
 	return nil
 }
 
-func (c *Client) doRequest(method string, query url.Values) (data []byte, err error) {
+func (c *Client) doRequest(ctx context.Context, method string, query url.Values) (data []byte, err error) {
 	defer func() { err = e.WrapIfErr("can't do request", err) }()
 
 	u := url.URL{
@@ -77,7 +78,7 @@ func (c *Client) doRequest(method string, query url.Values) (data []byte, err er
 		Path:   path.Join(c.basePath, method),
 	}
 
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}

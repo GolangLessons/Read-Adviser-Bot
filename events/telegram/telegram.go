@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"errors"
 
 	"read-adviser-bot/clients/telegram"
@@ -32,8 +33,8 @@ func New(client *telegram.Client, storage storage.Storage) *Processor {
 	}
 }
 
-func (p *Processor) Fetch(limit int) ([]events.Event, error) {
-	updates, err := p.tg.Updates(p.offset, limit)
+func (p *Processor) Fetch(ctx context.Context, limit int) ([]events.Event, error) {
+	updates, err := p.tg.Updates(ctx, p.offset, limit)
 	if err != nil {
 		return nil, e.Wrap("can't get events", err)
 	}
@@ -53,22 +54,22 @@ func (p *Processor) Fetch(limit int) ([]events.Event, error) {
 	return res, nil
 }
 
-func (p *Processor) Process(event events.Event) error {
+func (p *Processor) Process(ctx context.Context, event events.Event) error {
 	switch event.Type {
 	case events.Message:
-		return p.processMessage(event)
+		return p.processMessage(ctx, event)
 	default:
 		return e.Wrap("can't process message", ErrUnknownEventType)
 	}
 }
 
-func (p *Processor) processMessage(event events.Event) error {
+func (p *Processor) processMessage(ctx context.Context, event events.Event) error {
 	meta, err := meta(event)
 	if err != nil {
 		return e.Wrap("can't process message", err)
 	}
 
-	if err := p.doCmd(event.Text, meta.ChatID, meta.Username); err != nil {
+	if err := p.doCmd(ctx, event.Text, meta.ChatID, meta.Username); err != nil {
 		return e.Wrap("can't process message", err)
 	}
 
