@@ -78,13 +78,13 @@ func (s Storage) PickRandom(_ context.Context, userName string) (page *storage.P
 func (s Storage) Remove(_ context.Context, p *storage.Page) error {
 	fileName, err := fileName(p)
 	if err != nil {
-		return e.Wrap("can't remove file", err)
+		return e.Wrap("can't remove page", err)
 	}
 
 	path := filepath.Join(s.basePath, p.UserName, fileName)
 
 	if err := os.Remove(path); err != nil {
-		msg := fmt.Sprintf("can't remove file %s", path)
+		msg := fmt.Sprintf("can't remove page %s", path)
 
 		return e.Wrap(msg, err)
 	}
@@ -95,7 +95,7 @@ func (s Storage) Remove(_ context.Context, p *storage.Page) error {
 func (s Storage) IsExists(_ context.Context, p *storage.Page) (bool, error) {
 	fileName, err := fileName(p)
 	if err != nil {
-		return false, e.Wrap("can't check if file exists", err)
+		return false, e.Wrap("can't check if page exists", err)
 	}
 
 	path := filepath.Join(s.basePath, p.UserName, fileName)
